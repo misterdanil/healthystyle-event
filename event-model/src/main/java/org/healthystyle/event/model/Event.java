@@ -4,6 +4,8 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.healthystyle.event.model.status.Status;
+
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -13,6 +15,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.SequenceGenerator;
@@ -36,6 +39,9 @@ public class Event {
 	private Place place;
 	@OneToMany(mappedBy = "event", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
 	private List<UserEvent> users;
+	@ManyToOne
+	@JoinColumn(name = "status_id", nullable = false)
+	private Status status;
 	@Temporal(TemporalType.TIMESTAMP)
 	@Column(nullable = false)
 	private Instant createdOn = Instant.now();
@@ -44,11 +50,12 @@ public class Event {
 		super();
 	}
 
-	public Event(String title, String description, Place place) {
+	public Event(String title, String description, Place place, Status status) {
 		super();
 		this.title = title;
 		this.description = description;
 		this.place = place;
+		this.status = status;
 	}
 
 	public Long getId() {
@@ -80,6 +87,14 @@ public class Event {
 
 	public void addUser(UserEvent user) {
 		getUsers().add(user);
+	}
+
+	public Status getStatus() {
+		return status;
+	}
+
+	public void setStatus(Status status) {
+		this.status = status;
 	}
 
 	public Instant getCreatedOn() {

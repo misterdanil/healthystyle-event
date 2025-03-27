@@ -14,5 +14,6 @@
 	<modules>
 		<module>event-model</module>
 		<module>event-repository</module>
+		<module>event-service</module>
 	</modules>
 </project>
