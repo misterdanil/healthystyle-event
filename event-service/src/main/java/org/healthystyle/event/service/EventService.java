@@ -4,7 +4,9 @@ import org.healthystyle.event.model.Event;
 import org.healthystyle.event.service.dto.EventSaveRequest;
 import org.healthystyle.event.service.dto.EventUpdateRequest;
 import org.healthystyle.event.service.error.event.EventNotFoundException;
-import org.healthystyle.event.service.error.user.UserNotFoundException;
+import org.healthystyle.event.service.error.event.RoleUnacceptableException;
+import org.healthystyle.event.service.error.event.UserEventExistException;
+import org.healthystyle.event.service.error.event.UserNotFoundException;
 import org.healthystyle.util.error.ValidationException;
 import org.healthystyle.util.log.MethodNameHelper;
 import org.springframework.data.domain.Page;
@@ -33,7 +35,8 @@ public interface EventService {
 
 	Page<Event> findByMember(Long userId, int page, int limit) throws ValidationException;
 
-	Event save(EventSaveRequest saveRequest) throws ValidationException, UserNotFoundException;
+	Event save(EventSaveRequest saveRequest) throws ValidationException, UserNotFoundException, EventNotFoundException,
+			UserEventExistException, RoleUnacceptableException;
 
 	void update(EventUpdateRequest updateRequest, Long id) throws ValidationException, EventNotFoundException;
 

@@ -1,9 +1,8 @@
 package org.healthystyle.event.model;
 
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 
 import org.healthystyle.event.model.role.Role;
 
@@ -35,8 +34,8 @@ public class UserEvent {
 	@JoinColumn(name = "event_id", nullable = false)
 	private Event event;
 	@ManyToMany
-	@JoinTable(name = "user_event", joinColumns = @JoinColumn(name = "user_event_id", nullable = false), inverseJoinColumns = @JoinColumn(name = "role_id", nullable = false))
-	private List<Role> roles;
+	@JoinTable(name = "user_event_role", joinColumns = @JoinColumn(name = "user_event_id", nullable = false), inverseJoinColumns = @JoinColumn(name = "role_id", nullable = false))
+	private Set<Role> roles;
 	@Temporal(TemporalType.TIMESTAMP)
 	@Column(nullable = false)
 	private Instant createdOn = Instant.now();
@@ -45,11 +44,11 @@ public class UserEvent {
 		super();
 	}
 
-	public UserEvent(Long userId, Event event, Role... roles) {
+	public UserEvent(Long userId, Event event, Set<Role> roles) {
 		super();
 		this.userId = userId;
 		this.event = event;
-		this.roles = Arrays.asList(roles);
+		this.roles = roles;
 	}
 
 	public Long getId() {
@@ -64,14 +63,14 @@ public class UserEvent {
 		return event;
 	}
 
-	public List<Role> getRoles() {
+	public Set<Role> getRoles() {
 		if (roles == null) {
-			roles = new ArrayList<>();
+			roles = new HashSet<>();
 		}
 		return roles;
 	}
 
-	public void addRoles(List<Role> roles) {
+	public void addRoles(Set<Role> roles) {
 		getRoles().addAll(roles);
 	}
 

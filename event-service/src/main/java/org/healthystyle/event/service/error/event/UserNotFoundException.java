@@ -1,4 +1,4 @@
-package org.healthystyle.event.service.error.user;
+package org.healthystyle.event.service.error.event;
 
 import org.healthystyle.util.error.AbstractException;
 import org.springframework.validation.BindingResult;

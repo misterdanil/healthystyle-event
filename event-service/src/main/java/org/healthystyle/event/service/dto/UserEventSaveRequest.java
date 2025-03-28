@@ -4,6 +4,8 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.healthystyle.event.model.role.Type;
+
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 
@@ -11,16 +13,16 @@ public class UserEventSaveRequest {
 	@NotNull(message = "Укажите идентификатор пользователя")
 	private Long userId;
 	@NotEmpty(message = "Укажите хотя бы одну роль")
-	private Set<Long> roleIds;
+	private Set<Type> roleTypes;
 
 	public UserEventSaveRequest() {
 		super();
 	}
 
-	public UserEventSaveRequest(Long userId, Long... roleIds) {
+	public UserEventSaveRequest(Long userId, Type... roleTypes) {
 		super();
 		this.userId = userId;
-		this.roleIds = new HashSet<>(Arrays.asList(roleIds));
+		this.roleTypes = new HashSet<>(Arrays.asList(roleTypes));
 	}
 
 	public Long getUserId() {
@@ -31,12 +33,12 @@ public class UserEventSaveRequest {
 		this.userId = userId;
 	}
 
-	public Set<Long> getRoleIds() {
-		return roleIds;
+	public Set<Type> getRoleTypes() {
+		return roleTypes;
 	}
 
-	public void setRoleIds(Set<Long> roleIds) {
-		this.roleIds = roleIds;
+	public void setRoleTypes(Set<Type> roleTypes) {
+		this.roleTypes = roleTypes;
 	}
 
 }

@@ -23,7 +23,9 @@ import org.healthystyle.event.service.dto.EventUpdateRequest;
 import org.healthystyle.event.service.dto.UserEventSaveRequest;
 import org.healthystyle.event.service.dto.mapper.EventMapper;
 import org.healthystyle.event.service.error.event.EventNotFoundException;
-import org.healthystyle.event.service.error.user.UserNotFoundException;
+import org.healthystyle.event.service.error.event.RoleUnacceptableException;
+import org.healthystyle.event.service.error.event.UserEventExistException;
+import org.healthystyle.event.service.error.event.UserNotFoundException;
 import org.healthystyle.event.service.notifier.EventNotifier;
 import org.healthystyle.event.service.role.RoleService;
 import org.healthystyle.event.service.status.StatusService;
@@ -183,7 +185,8 @@ public class EventServiceImpl implements EventService {
 	}
 
 	@Override
-	public Event save(EventSaveRequest saveRequest) throws ValidationException, UserNotFoundException {
+	public Event save(EventSaveRequest saveRequest) throws ValidationException, UserNotFoundException,
+			EventNotFoundException, UserEventExistException, RoleUnacceptableException {
 		LOG.debug("Validating event: {}", saveRequest);
 		BindingResult result = new BeanPropertyBindingResult(saveRequest, "event");
 		validator.validate(saveRequest, result);
@@ -213,12 +216,9 @@ public class EventServiceImpl implements EventService {
 //			throw new UserNotFoundException(result, userIds);
 //		}
 
-		Role ownerRole = roleService.findByType(Type.OWNER);
-		Role memberRole = roleService.findByType(Type.MEMBER);
-
 		LOG.debug("Getting owner");
 		org.healthystyle.util.user.User owner = userAccessor.getUser();
-		UserEventSaveRequest ownerSaveRequest = new UserEventSaveRequest(owner.getId(), ownerRole.getId());
+		UserEventSaveRequest ownerSaveRequest = new UserEventSaveRequest(owner.getId(), Type.OWNER, Type.MEMBER);
 		LOG.debug("Saving owner: {}", ownerSaveRequest);
 		userEventService.save(ownerSaveRequest, event.getId());
 
@@ -226,7 +226,7 @@ public class EventServiceImpl implements EventService {
 		LOG.debug("Saving users by ids '{}'", userIds);
 		for (Long userId : userIds) {
 			LOG.debug("Saving user by id '{}'", userId);
-			UserEventSaveRequest userEventSaveRequest = new UserEventSaveRequest(userId, memberRole.getId());
+			UserEventSaveRequest userEventSaveRequest = new UserEventSaveRequest(userId, Type.MEMBER);
 			UserEvent userEvent = userEventService.save(userEventSaveRequest, event.getId());
 			event.addUser(userEvent);
 		}

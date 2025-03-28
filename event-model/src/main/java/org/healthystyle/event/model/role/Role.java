@@ -1,6 +1,7 @@
 package org.healthystyle.event.model.role;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.healthystyle.event.model.role.opportunity.Opportunity;
@@ -41,6 +42,21 @@ public class Role {
 
 	public Type getType() {
 		return type;
+	}
+
+	public List<Opportunity> getOpportunities() {
+		if (opportunities == null) {
+			opportunities = new ArrayList<>();
+		}
+		return opportunities;
+	}
+
+	public void addOpportunity(Opportunity opportunity) {
+		getOpportunities().add(opportunity);
+	}
+
+	public void addOpportunities(List<Opportunity> opportunities) {
+		getOpportunities().addAll(opportunities);
 	}
 
 	public Instant getCreatedOn() {

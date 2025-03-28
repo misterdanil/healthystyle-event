@@ -68,4 +68,12 @@ public class UserServiceImpl implements UserService {
 		return user;
 	}
 
+	@Override
+	public boolean existsById(Long id) {
+		LOG.debug("Checking user existence by id '{}'", id);
+		boolean exists = repository.existsById(id);
+		LOG.debug("Got existence result by id '{}' successfully", id);
+		return exists;
+	}
+
 }

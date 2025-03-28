@@ -8,6 +8,8 @@ import org.healthystyle.util.error.ValidationException;
 
 public interface UserService {
 	List<User> findAllById(Set<Long> ids);
-	
+
 	User save(User user) throws ValidationException;
+
+	boolean existsById(Long id);
 }

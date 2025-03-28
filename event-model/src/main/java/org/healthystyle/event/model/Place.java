@@ -31,6 +31,18 @@ public class Place {
 	@Column(nullable = false)
 	private Instant createdOn = Instant.now();
 
+	public Place() {
+		super();
+	}
+
+	public Place(String title, String description, Double latitude, Double longitude) {
+		super();
+		this.title = title;
+		this.description = description;
+		this.latitude = latitude;
+		this.longitude = longitude;
+	}
+
 	public Long getId() {
 		return id;
 	}
