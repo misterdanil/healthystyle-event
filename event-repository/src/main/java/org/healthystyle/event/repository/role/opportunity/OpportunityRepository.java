@@ -1,4 +1,4 @@
-package org.healthystyle.event.repository.role;
+package org.healthystyle.event.repository.role.opportunity;
 
 import org.healthystyle.event.model.role.opportunity.Name;
 import org.healthystyle.event.model.role.opportunity.Opportunity;

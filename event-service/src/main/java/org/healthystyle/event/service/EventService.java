@@ -3,7 +3,8 @@ package org.healthystyle.event.service;
 import org.healthystyle.event.model.Event;
 import org.healthystyle.event.service.dto.EventSaveRequest;
 import org.healthystyle.event.service.dto.EventUpdateRequest;
-import org.healthystyle.event.service.error.EventNotFoundException;
+import org.healthystyle.event.service.error.event.EventNotFoundException;
+import org.healthystyle.event.service.error.user.UserNotFoundException;
 import org.healthystyle.util.error.ValidationException;
 import org.healthystyle.util.log.MethodNameHelper;
 import org.springframework.data.domain.Page;
@@ -32,7 +33,9 @@ public interface EventService {
 
 	Page<Event> findByMember(Long userId, int page, int limit) throws ValidationException;
 
-	Event save(EventSaveRequest saveRequest);
+	Event save(EventSaveRequest saveRequest) throws ValidationException, UserNotFoundException;
 
-	void update(EventUpdateRequest updateRequest, Long id);
+	void update(EventUpdateRequest updateRequest, Long id) throws ValidationException, EventNotFoundException;
+
+	void deleteById(Long id) throws ValidationException, EventNotFoundException;
 }

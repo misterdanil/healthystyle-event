@@ -16,6 +16,8 @@ public class EventSaveRequest {
 	private PlaceSaveRequest place;
 	@NotEmpty(message = "Укажите участников события")
 	private Set<Long> userIds;
+	private String eventType;
+	private String body;
 
 	public String getTitle() {
 		return title;
@@ -47,6 +49,22 @@ public class EventSaveRequest {
 
 	public void setUserIds(Set<Long> userIds) {
 		this.userIds = userIds;
+	}
+
+	public String getEventType() {
+		return eventType;
+	}
+
+	public void setEventType(String eventType) {
+		this.eventType = eventType;
+	}
+
+	public String getBody() {
+		return body;
+	}
+
+	public void setBody(String body) {
+		this.body = body;
 	}
 
 }

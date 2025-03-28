@@ -1,12 +1,14 @@
 package org.healthystyle.event.service.impl;
 
-import java.util.HashSet;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Optional;
 import java.util.Set;
 
 import org.healthystyle.event.model.Event;
 import org.healthystyle.event.model.Place;
+import org.healthystyle.event.model.UserEvent;
+import org.healthystyle.event.model.role.Role;
 import org.healthystyle.event.model.role.Type;
 import org.healthystyle.event.model.status.Status;
 import org.healthystyle.event.model.status.StatusType;
@@ -14,11 +16,15 @@ import org.healthystyle.event.repository.EventRepository;
 import org.healthystyle.event.service.EventService;
 import org.healthystyle.event.service.PlaceService;
 import org.healthystyle.event.service.UserEventService;
-import org.healthystyle.event.service.cache.UserRepository;
-import org.healthystyle.event.service.cache.dto.User;
+import org.healthystyle.event.service.config.RabbitConfig;
+import org.healthystyle.event.service.dto.EventDto;
 import org.healthystyle.event.service.dto.EventSaveRequest;
 import org.healthystyle.event.service.dto.EventUpdateRequest;
-import org.healthystyle.event.service.error.EventNotFoundException;
+import org.healthystyle.event.service.dto.UserEventSaveRequest;
+import org.healthystyle.event.service.dto.mapper.EventMapper;
+import org.healthystyle.event.service.error.event.EventNotFoundException;
+import org.healthystyle.event.service.error.user.UserNotFoundException;
+import org.healthystyle.event.service.notifier.EventNotifier;
 import org.healthystyle.event.service.role.RoleService;
 import org.healthystyle.event.service.status.StatusService;
 import org.healthystyle.util.error.ValidationException;
@@ -27,6 +33,7 @@ import org.healthystyle.util.user.UserAccessor;
 import org.healthystyle.util.validation.ParamsChecker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -49,12 +56,13 @@ public class EventServiceImpl implements EventService {
 	@Autowired
 	private StatusService statusService;
 	@Autowired
-	private UserRepository userRepository;
-	@Autowired
 	private UserAccessor userAccessor;
 	@Autowired
 	private UserEventService userEventService;
-
+	@Autowired
+	private EventMapper mapper;
+	@Autowired
+	private EventNotifier notifier;
 	private static final Integer MAX_SIZE = 25;
 
 	private static final Logger LOG = LoggerFactory.getLogger(EventServiceImpl.class);
@@ -175,7 +183,7 @@ public class EventServiceImpl implements EventService {
 	}
 
 	@Override
-	public Event save(EventSaveRequest saveRequest) {
+	public Event save(EventSaveRequest saveRequest) throws ValidationException, UserNotFoundException {
 		LOG.debug("Validating event: {}", saveRequest);
 		BindingResult result = new BeanPropertyBindingResult(saveRequest, "event");
 		validator.validate(saveRequest, result);
@@ -188,38 +196,106 @@ public class EventServiceImpl implements EventService {
 		if (description != null && description.isBlank()) {
 			description = null;
 		}
-		
+
 		Place place = placeService.save(saveRequest.getPlace());
 		Status status = statusService.findByType(StatusType.PENDING);
-		
+
+		LOG.debug("The event is OK: {}", saveRequest);
 		Event event = new Event(saveRequest.getTitle(), saveRequest.getDescription(), place, status);
 		event = repository.save(event);
-		
-		Set<Long> userIds = saveRequest.getUserIds();
-		LOG.debug("Checking users for existence by ids '{}'", userIds);
-		Iterable<User> users = userRepository.findAllById(userIds);
-		Set<Long> foundedIds = new HashSet<>();
-		users.forEach(u -> foundedIds.add(u.getId()));
-		userIds.removeAll(foundedIds);
-		if (!userIds.isEmpty()) {
-			result.reject("event.save.user.not_found", "Не удалось найти пользователей по идентификаторам: " + userIds);
-			throw new UserNotFoundException(result, userIds);
-		}
-		
+
+//		Set<Long> userIds = saveRequest.getUserIds();
+//		LOG.debug("Checking users for existence by ids '{}'", userIds);
+//		List<User> users = userService.findAllById(userIds);
+//		if (users.size() < userIds.size()) {
+//			userIds.removeAll(users.stream().map(u -> u.getId()).toList());
+//			result.reject("event.save.user.not_found", "Не удалось найти пользователей по идентификаторам: " + userIds);
+//			throw new UserNotFoundException(result, userIds);
+//		}
+
 		Role ownerRole = roleService.findByType(Type.OWNER);
 		Role memberRole = roleService.findByType(Type.MEMBER);
-		
-		for (Long foundedId : foundedIds) {
-			UserEventSaveRequest userEventSaveRequest = new UserEventSaveRequest(foundedId, event.getId(),);
+
+		LOG.debug("Getting owner");
+		org.healthystyle.util.user.User owner = userAccessor.getUser();
+		UserEventSaveRequest ownerSaveRequest = new UserEventSaveRequest(owner.getId(), ownerRole.getId());
+		LOG.debug("Saving owner: {}", ownerSaveRequest);
+		userEventService.save(ownerSaveRequest, event.getId());
+
+		Set<Long> userIds = saveRequest.getUserIds();
+		LOG.debug("Saving users by ids '{}'", userIds);
+		for (Long userId : userIds) {
+			LOG.debug("Saving user by id '{}'", userId);
+			UserEventSaveRequest userEventSaveRequest = new UserEventSaveRequest(userId, memberRole.getId());
+			UserEvent userEvent = userEventService.save(userEventSaveRequest, event.getId());
+			event.addUser(userEvent);
 		}
 
-		saveRequest.getUserIds();
+		LOG.debug("The event and its data was saved successfully. Preparing data for sending");
+
+		EventDto dto = mapper.toEventDto(event);
+		dto.setEventType(saveRequest.getEventType());
+		dto.setBody(saveRequest.getBody());
+		notifier.notifyCreated(dto);
+
+		return event;
 	}
 
 	@Override
-	public void update(EventUpdateRequest updateRequest, Long id) {
-		// TODO Auto-generated method stub
+	public void update(EventUpdateRequest updateRequest, Long id) throws ValidationException, EventNotFoundException {
+		LOG.debug("Validating event: {}", updateRequest);
+		BindingResult result = new BeanPropertyBindingResult(updateRequest, "event");
+		validator.validate(updateRequest, result);
+		LOG.debug("Checking id for not null");
+		if (id == null) {
+			result.reject("event.update.id.not_null", "Укажите идентификатор события для обновления");
+		}
+		if (result.hasErrors()) {
+			throw new ValidationException("The event is invalid: %s. Result: %s", result, updateRequest, result);
+		}
 
+		LOG.debug("Checking event for existence by id '{}'", id);
+		Event event = findById(id);
+
+		LOG.debug("The event is OK: {}", updateRequest);
+
+		String title = updateRequest.getTitle();
+		String oldTitle = event.getTitle();
+		if (!title.equals(oldTitle)) {
+			LOG.debug("Setting title from '{}' to '{}'", oldTitle, title);
+			event.setTitle(title);
+		}
+
+		String description = updateRequest.getDescription();
+		String oldDescription = event.getDescription();
+		if (!description.equals(oldDescription)) {
+			LOG.debug("Setting description from '{}' to '{}'", oldDescription, description);
+			event.setDescription(description);
+		}
+
+		event = repository.save(event);
+		LOG.info("The event was updated successfully");
+	}
+
+	@Override
+	public void deleteById(Long id) throws ValidationException, EventNotFoundException {
+		BindingResult result = new MapBindingResult(new HashMap<>(), "event");
+
+		LOG.debug("Checking id for not null: {}", id);
+		if (id == null) {
+			result.reject("event.delete.id.not_null", "Укажите идентификатор события для удаления");
+			throw new ValidationException("The id is null", result);
+		}
+
+		LOG.debug("Checking event for existence by id '{}'", id);
+		Event event = findById(id);
+
+		LOG.debug("The data is OK: {}. Deleting event");
+		repository.delete(event);
+
+		LOG.debug("The event was deleted successfully. Preparing data for sending");
+		EventDto dto = mapper.toEventDto(event);
+		notifier.notifyDeleted(dto);
 	}
 
 }

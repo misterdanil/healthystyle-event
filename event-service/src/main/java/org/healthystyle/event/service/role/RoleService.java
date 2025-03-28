@@ -1,6 +1,8 @@
 package org.healthystyle.event.service.role;
 
-import javax.management.relation.Role;
+
+import org.healthystyle.event.model.role.Role;
+import org.healthystyle.event.model.role.Type;
 
 public interface RoleService {
 	Role findByType(Type type);
