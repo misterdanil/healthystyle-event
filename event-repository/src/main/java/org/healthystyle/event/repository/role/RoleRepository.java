@@ -1,6 +1,5 @@
 package org.healthystyle.event.repository.role;
 
-import java.util.List;
 import java.util.Set;
 
 import org.healthystyle.event.model.role.Role;
@@ -14,5 +13,5 @@ public interface RoleRepository {
 	Role findByType(Type type);
 
 	@Query("SELECT r FROM Role r WHERE r.type IN :types")
-	List<Role> findByTypes(Set<Type> types);
+	Set<Role> findByTypes(Set<Type> types);
 }

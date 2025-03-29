@@ -1,5 +1,7 @@
 package org.healthystyle.event.service.dto;
 
+import java.util.List;
+
 public class EventDto {
 	private Long id;
 	private String title;
@@ -7,6 +9,7 @@ public class EventDto {
 	private PlaceDto place;
 	private String eventType;
 	private String body;
+	private List<UserEventDto> users;
 
 	public EventDto() {
 		super();
@@ -68,6 +71,14 @@ public class EventDto {
 
 	public void setBody(String body) {
 		this.body = body;
+	}
+
+	public List<UserEventDto> getUsers() {
+		return users;
+	}
+
+	public void setUsers(List<UserEventDto> users) {
+		this.users = users;
 	}
 
 }

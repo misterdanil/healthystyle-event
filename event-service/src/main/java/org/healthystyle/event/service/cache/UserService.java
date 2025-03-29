@@ -12,4 +12,6 @@ public interface UserService {
 	User save(User user) throws ValidationException;
 
 	boolean existsById(Long id);
+
+	void delete(User user);
 }

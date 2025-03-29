@@ -42,6 +42,8 @@ public class Event {
 	@ManyToOne
 	@JoinColumn(name = "status_id", nullable = false)
 	private Status status;
+	@Column(name = "event_type")
+	private String eventType;
 	@Temporal(TemporalType.TIMESTAMP)
 	@Column(nullable = false)
 	private Instant createdOn = Instant.now();
@@ -95,6 +97,14 @@ public class Event {
 
 	public void setStatus(Status status) {
 		this.status = status;
+	}
+
+	public String getEventType() {
+		return eventType;
+	}
+
+	public void setEventType(String eventType) {
+		this.eventType = eventType;
 	}
 
 	public Instant getCreatedOn() {

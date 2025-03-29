@@ -40,6 +40,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
+import org.springframework.util.Assert;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.MapBindingResult;
@@ -53,8 +54,6 @@ public class EventServiceImpl implements EventService {
 	private Validator validator;
 	@Autowired
 	private PlaceService placeService;
-	@Autowired
-	private RoleService roleService;
 	@Autowired
 	private StatusService statusService;
 	@Autowired
@@ -199,12 +198,18 @@ public class EventServiceImpl implements EventService {
 		if (description != null && description.isBlank()) {
 			description = null;
 		}
+		String eventType = saveRequest.getEventType();
+		LOG.debug("Checking event type for not blank: {}", eventType);
+		if (eventType != null && eventType.isBlank()) {
+			eventType = null;
+		}
 
 		Place place = placeService.save(saveRequest.getPlace());
 		Status status = statusService.findByType(StatusType.PENDING);
 
 		LOG.debug("The event is OK: {}", saveRequest);
 		Event event = new Event(saveRequest.getTitle(), saveRequest.getDescription(), place, status);
+		event.setEventType(eventType);
 		event = repository.save(event);
 
 //		Set<Long> userIds = saveRequest.getUserIds();
@@ -296,6 +301,26 @@ public class EventServiceImpl implements EventService {
 		LOG.debug("The event was deleted successfully. Preparing data for sending");
 		EventDto dto = mapper.toEventDto(event);
 		notifier.notifyDeleted(dto);
+	}
+
+	@Override
+	public void changeStatus(StatusType type, Long id) throws ValidationException, EventNotFoundException {
+		BindingResult result = new MapBindingResult(new LinkedHashMap<>(), "event");
+
+		LOG.debug("Checking type is not null: {}", type);
+		if (type == null) {
+			result.reject("event.update.status.type.not_null", "Укажите статус");
+			throw new ValidationException("Status type is null", result);
+		}
+		
+		Status status = statusService.findByType(type);
+		
+		Event event = findById(id);
+		
+		event.setStatus(status);
+		
+		repository.save(event);
+		LOG.info("Status '{}' of event '{}' has been changed successfully", type, id);
 	}
 
 }

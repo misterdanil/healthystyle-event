@@ -76,4 +76,10 @@ public class UserServiceImpl implements UserService {
 		return exists;
 	}
 
+	@Override
+	public void delete(User user) {
+		LOG.debug("Deleteing user: {}", user);
+		repository.delete(user);
+	}
+
 }

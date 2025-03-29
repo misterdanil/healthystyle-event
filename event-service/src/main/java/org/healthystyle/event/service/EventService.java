@@ -1,6 +1,7 @@
 package org.healthystyle.event.service;
 
 import org.healthystyle.event.model.Event;
+import org.healthystyle.event.model.status.StatusType;
 import org.healthystyle.event.service.dto.EventSaveRequest;
 import org.healthystyle.event.service.dto.EventUpdateRequest;
 import org.healthystyle.event.service.error.event.EventNotFoundException;
@@ -41,4 +42,6 @@ public interface EventService {
 	void update(EventUpdateRequest updateRequest, Long id) throws ValidationException, EventNotFoundException;
 
 	void deleteById(Long id) throws ValidationException, EventNotFoundException;
+
+	void changeStatus(StatusType type, Long id) throws ValidationException, EventNotFoundException;
 }
