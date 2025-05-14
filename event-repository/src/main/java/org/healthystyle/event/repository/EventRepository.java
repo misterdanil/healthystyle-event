@@ -1,7 +1,6 @@
 package org.healthystyle.event.repository;
 
 import org.healthystyle.event.model.Event;
-
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -13,8 +12,12 @@ public interface EventRepository extends JpaRepository<Event, Long> {
 	@Query("SELECT e FROM Event e WHERE LOWER(e.title) = LOWER(:title) ORDER BY e.createdOn DESC")
 	Page<Event> findByTitle(String title, Pageable pageable);
 
-	@Query("SELECT e FROM Event e INNER JOIN e.place p ORDER BY SQRT((:latitude - p.latitude)^2 + (:longitude - p.longitude)^2)")
-	Page<Event> findNearestByCoordinates(Double latitude, Double longitude, Pageable pageable);
+	@Query("SELECT e FROM Event e INNER JOIN e.place p WHERE LOWER(e.title) LIKE CONCAT('%', LOWER(:title), '%') ORDER BY SQRT((:latitude - p.latitude) * (:latitude - p.latitude) + (:longitude - p.longitude) * (:longitude - p.longitude))")
+	Page<Event> findNearestByCoordinates(String title, Double latitude, Double longitude, Pageable pageable);
+
+	@Query("SELECT e, haversine(:latitude, :longitude, p.latitude, p.longitude) AS distance FROM Event e INNER JOIN e.place p WHERE LOWER(e.title) LIKE CONCAT('%', LOWER(:title), '%') ORDER BY haversine(:latitude, :longitude, p.latitude, p.longitude)")
+	Page<Object[][]> findNearestByCoordinatesHaversine(String title, Double latitude, Double longitude,
+			Pageable pageable);
 
 	@Query("SELECT e FROM Event e ORDER BY e.createdOn DESC")
 	Page<Event> find(Pageable pageable);

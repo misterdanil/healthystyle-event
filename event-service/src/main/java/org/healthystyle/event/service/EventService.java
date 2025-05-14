@@ -1,7 +1,10 @@
 package org.healthystyle.event.service;
 
+import java.util.List;
+
 import org.healthystyle.event.model.Event;
 import org.healthystyle.event.model.status.StatusType;
+import org.healthystyle.event.service.dto.DistanceEvent;
 import org.healthystyle.event.service.dto.EventSaveRequest;
 import org.healthystyle.event.service.dto.EventUpdateRequest;
 import org.healthystyle.event.service.error.event.EventNotFoundException;
@@ -17,7 +20,7 @@ public interface EventService {
 			"findByTitle", String.class, int.class, int.class);
 
 	static final String[] FIND_NEAREST_BY_COORDINATES_PARAM_NAMES = MethodNameHelper.getMethodParamNames(
-			EventService.class, "findNearestByCoordinates", Double.class, Double.class, int.class, int.class);
+			EventService.class, "findNearestByCoordinates", String.class, Double.class, Double.class, int.class, int.class);
 
 	static final String[] FIND_PARAM_NAMES = MethodNameHelper.getMethodParamNames(EventService.class, "find", int.class,
 			int.class);
@@ -29,13 +32,13 @@ public interface EventService {
 
 	Page<Event> findByTitle(String title, int page, int limit) throws ValidationException;
 
-	Page<Event> findNearestByCoordinates(Double latitude, Double longitude, int page, int limit)
+	List<DistanceEvent> findNearestByCoordinates(String title, Double latitude, Double longitude, int page, int limit)
 			throws ValidationException;
 
 	Page<Event> find(int page, int limit) throws ValidationException;
 
 	Page<Event> findByMember(Long userId, int page, int limit) throws ValidationException;
-
+	
 	Event save(EventSaveRequest saveRequest) throws ValidationException, UserNotFoundException, EventNotFoundException,
 			UserEventExistException, RoleUnacceptableException;
 

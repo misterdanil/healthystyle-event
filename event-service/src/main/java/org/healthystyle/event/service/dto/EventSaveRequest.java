@@ -1,8 +1,9 @@
 package org.healthystyle.event.service.dto;
 
-import java.util.List;
+import java.time.Instant;
 import java.util.Set;
 
+import jakarta.validation.constraints.Future;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
@@ -14,6 +15,9 @@ public class EventSaveRequest {
 	private String description;
 	@NotNull(message = "Укажите место проведения")
 	private PlaceSaveRequest place;
+	@NotNull(message = "Укажите время и дату проведения")
+	@Future(message = "Дата и время должны быть в будущем времени")
+	private Instant appointedTime;
 	@NotEmpty(message = "Укажите участников события")
 	private Set<Long> userIds;
 	private String eventType;
@@ -41,6 +45,14 @@ public class EventSaveRequest {
 
 	public void setPlace(PlaceSaveRequest place) {
 		this.place = place;
+	}
+
+	public Instant getAppointedTime() {
+		return appointedTime;
+	}
+
+	public void setAppointedTime(Instant appointedTime) {
+		this.appointedTime = appointedTime;
 	}
 
 	public Set<Long> getUserIds() {

@@ -42,6 +42,9 @@ public class Event {
 	@ManyToOne
 	@JoinColumn(name = "status_id", nullable = false)
 	private Status status;
+	@Temporal(TemporalType.TIMESTAMP)
+	@Column(nullable = false)
+	private Instant appointedTime;
 	@Column(name = "event_type")
 	private String eventType;
 	@Temporal(TemporalType.TIMESTAMP)
@@ -52,11 +55,12 @@ public class Event {
 		super();
 	}
 
-	public Event(String title, String description, Place place, Status status) {
+	public Event(String title, String description, Place place, Instant appointedTime, Status status) {
 		super();
 		this.title = title;
 		this.description = description;
 		this.place = place;
+		this.appointedTime = appointedTime;
 		this.status = status;
 	}
 
@@ -97,6 +101,14 @@ public class Event {
 
 	public void setStatus(Status status) {
 		this.status = status;
+	}
+
+	public Instant getAppointedTime() {
+		return appointedTime;
+	}
+
+	public void setAppointedTime(Instant appointedTime) {
+		this.appointedTime = appointedTime;
 	}
 
 	public String getEventType() {

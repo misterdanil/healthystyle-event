@@ -15,5 +15,7 @@
 		<module>event-model</module>
 		<module>event-repository</module>
 		<module>event-service</module>
+		<module>event-web</module>
+		<module>event-app</module>
 	</modules>
 </project>

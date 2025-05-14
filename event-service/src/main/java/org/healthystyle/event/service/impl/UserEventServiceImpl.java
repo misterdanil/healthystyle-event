@@ -2,6 +2,7 @@ package org.healthystyle.event.service.impl;
 
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
@@ -10,9 +11,9 @@ import org.healthystyle.event.model.UserEvent;
 import org.healthystyle.event.model.role.Role;
 import org.healthystyle.event.model.role.Type;
 import org.healthystyle.event.repository.UserEventRepository;
+import org.healthystyle.event.repository.dto.ParticipateStatus;
 import org.healthystyle.event.service.EventService;
 import org.healthystyle.event.service.UserEventService;
-import org.healthystyle.event.service.cache.UserService;
 import org.healthystyle.event.service.dto.UserEventSaveRequest;
 import org.healthystyle.event.service.dto.UserEventUpdateRequest;
 import org.healthystyle.event.service.error.event.EventNotFoundException;
@@ -25,6 +26,8 @@ import org.healthystyle.event.service.error.event.UserNotFoundException;
 import org.healthystyle.event.service.role.RoleService;
 import org.healthystyle.util.error.ValidationException;
 import org.healthystyle.util.log.LogTemplate;
+import org.healthystyle.util.user.User;
+import org.healthystyle.util.user.UserAccessor;
 import org.healthystyle.util.validation.ParamsChecker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -47,7 +50,7 @@ public class UserEventServiceImpl implements UserEventService {
 	@Autowired
 	private EventService eventService;
 	@Autowired
-	private UserService userService;
+	private UserAccessor userAccessor;
 	@Autowired
 	private RoleService roleService;
 
@@ -98,6 +101,11 @@ public class UserEventServiceImpl implements UserEventService {
 	}
 
 	@Override
+	public List<ParticipateStatus> checkStatus(Long userId, Long[] eventIds) {
+		return repository.checkStatus(userId, eventIds);
+	}
+
+	@Override
 	public UserEvent save(UserEventSaveRequest saveRequest, Long eventId) throws ValidationException,
 			EventNotFoundException, UserNotFoundException, UserEventExistException, RoleUnacceptableException {
 		LOG.debug("Validating member: {}", saveRequest);
@@ -112,11 +120,11 @@ public class UserEventServiceImpl implements UserEventService {
 		LOG.debug("The member is OK: {}", saveRequest);
 
 		Long userId = saveRequest.getUserId();
-		if (!userService.existsById(userId)) {
-			result.reject("user_event.save.user_id.not_exists",
-					"Не удалось найти пользователя для добавления в мероприятие");
-			throw new UserNotFoundException(result, userId);
-		}
+//		if (!userService.existsById(userId)) {
+//			result.reject("user_event.save.user_id.not_exists",
+//					"Не удалось найти пользователя для добавления в мероприятие");
+//			throw new UserNotFoundException(result, userId);
+//		}
 
 		if (repository.existsByUserIdAndEvent(userId, eventId)) {
 			result.reject("user_event.save.exists", "Участник уже присутствует в собрании");
@@ -137,6 +145,23 @@ public class UserEventServiceImpl implements UserEventService {
 		UserEvent userEvent = new UserEvent(userId, event, roles);
 		userEvent = repository.save(userEvent);
 		LOG.info("User event was saved successfully: {}", saveRequest);
+
+		return userEvent;
+	}
+
+	@Override
+	public UserEvent join(Long eventId) throws ValidationException, EventNotFoundException, UserEventExistException,
+			UserNotFoundException, RoleUnacceptableException {
+		BindingResult result = new MapBindingResult(new LinkedHashMap<>(), "event");
+		if (eventId == null) {
+			result.reject("user_event.join.event_id.not_null", "Укажите идентификатор мероприятия для присоединения");
+			throw new ValidationException("Event id is null", result);
+		}
+
+		Event event = eventService.findById(eventId);
+		User user = userAccessor.getUser();
+
+		UserEvent userEvent = save(new UserEventSaveRequest(user.getId(), Type.MEMBER), eventId);
 
 		return userEvent;
 	}

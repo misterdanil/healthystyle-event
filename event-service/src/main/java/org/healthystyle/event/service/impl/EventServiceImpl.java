@@ -1,14 +1,15 @@
 package org.healthystyle.event.service.impl;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
 import org.healthystyle.event.model.Event;
 import org.healthystyle.event.model.Place;
 import org.healthystyle.event.model.UserEvent;
-import org.healthystyle.event.model.role.Role;
 import org.healthystyle.event.model.role.Type;
 import org.healthystyle.event.model.status.Status;
 import org.healthystyle.event.model.status.StatusType;
@@ -16,7 +17,7 @@ import org.healthystyle.event.repository.EventRepository;
 import org.healthystyle.event.service.EventService;
 import org.healthystyle.event.service.PlaceService;
 import org.healthystyle.event.service.UserEventService;
-import org.healthystyle.event.service.config.RabbitConfig;
+import org.healthystyle.event.service.dto.DistanceEvent;
 import org.healthystyle.event.service.dto.EventDto;
 import org.healthystyle.event.service.dto.EventSaveRequest;
 import org.healthystyle.event.service.dto.EventUpdateRequest;
@@ -27,7 +28,6 @@ import org.healthystyle.event.service.error.event.RoleUnacceptableException;
 import org.healthystyle.event.service.error.event.UserEventExistException;
 import org.healthystyle.event.service.error.event.UserNotFoundException;
 import org.healthystyle.event.service.notifier.EventNotifier;
-import org.healthystyle.event.service.role.RoleService;
 import org.healthystyle.event.service.status.StatusService;
 import org.healthystyle.util.error.ValidationException;
 import org.healthystyle.util.log.LogTemplate;
@@ -35,12 +35,10 @@ import org.healthystyle.util.user.UserAccessor;
 import org.healthystyle.util.validation.ParamsChecker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
-import org.springframework.util.Assert;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.MapBindingResult;
@@ -113,13 +111,16 @@ public class EventServiceImpl implements EventService {
 	}
 
 	@Override
-	public Page<Event> findNearestByCoordinates(Double latitude, Double longitude, int page, int limit)
-			throws ValidationException {
-		String params = LogTemplate.getParamsTemplate(FIND_NEAREST_BY_COORDINATES_PARAM_NAMES, latitude, longitude,
-				page, limit);
+	public List<DistanceEvent> findNearestByCoordinates(String title, Double latitude, Double longitude, int page,
+			int limit) throws ValidationException {
+		String params = LogTemplate.getParamsTemplate(FIND_NEAREST_BY_COORDINATES_PARAM_NAMES, title, latitude,
+				longitude, page, limit);
 
 		BindingResult result = new MapBindingResult(new LinkedHashMap<>(), "event");
 		LOG.debug("Validating params: {}", params);
+		if (title == null) {
+			result.reject("event.find.title.not_null", "Укажите заголовок для поиска");
+		}
 		if (latitude == null) {
 			result.reject("event.find.latitude.not_null", "Укажите широту для поиска");
 		}
@@ -134,10 +135,22 @@ public class EventServiceImpl implements EventService {
 
 		LOG.debug("The params are OK: {}", params);
 
-		Page<Event> events = repository.findNearestByCoordinates(latitude, longitude, PageRequest.of(page, limit));
+		Page<Object[][]> events = repository.findNearestByCoordinatesHaversine(title, latitude, longitude,
+				PageRequest.of(page, limit));
 		LOG.info("Got events successfully by params: {}", params);
 
-		return events;
+		List<DistanceEvent> distances = new ArrayList<>();
+
+		for (Object[] e : events.getContent()) {
+
+			Event event = (Event) e[0];
+			DistanceEvent distanceEvent = mapper.toDistanceEvent(event);
+			distanceEvent.setDistance((Double) e[1]);
+			
+			distances.add(distanceEvent);
+		}
+
+		return distances;
 	}
 
 	@Override
@@ -208,7 +221,7 @@ public class EventServiceImpl implements EventService {
 		Status status = statusService.findByType(StatusType.PENDING);
 
 		LOG.debug("The event is OK: {}", saveRequest);
-		Event event = new Event(saveRequest.getTitle(), saveRequest.getDescription(), place, status);
+		Event event = new Event(saveRequest.getTitle(), saveRequest.getDescription(), place, saveRequest.getAppointedTime(), status);
 		event.setEventType(eventType);
 		event = repository.save(event);
 
@@ -238,7 +251,7 @@ public class EventServiceImpl implements EventService {
 
 		LOG.debug("The event and its data was saved successfully. Preparing data for sending");
 
-		EventDto dto = mapper.toEventDto(event);
+		EventDto dto = mapper.toDto(event);
 		dto.setEventType(saveRequest.getEventType());
 		dto.setBody(saveRequest.getBody());
 		notifier.notifyCreated(dto);
@@ -299,7 +312,7 @@ public class EventServiceImpl implements EventService {
 		repository.delete(event);
 
 		LOG.debug("The event was deleted successfully. Preparing data for sending");
-		EventDto dto = mapper.toEventDto(event);
+		EventDto dto = mapper.toDto(event);
 		notifier.notifyDeleted(dto);
 	}
 
@@ -312,13 +325,13 @@ public class EventServiceImpl implements EventService {
 			result.reject("event.update.status.type.not_null", "Укажите статус");
 			throw new ValidationException("Status type is null", result);
 		}
-		
+
 		Status status = statusService.findByType(type);
-		
+
 		Event event = findById(id);
-		
+
 		event.setStatus(status);
-		
+
 		repository.save(event);
 		LOG.info("Status '{}' of event '{}' has been changed successfully", type, id);
 	}

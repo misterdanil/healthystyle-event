@@ -1,21 +1,22 @@
 package org.healthystyle.event.service.dto;
 
-import java.util.List;
+import java.time.Instant;
 
 public class EventDto {
 	private Long id;
 	private String title;
 	private String description;
 	private PlaceDto place;
+	private Instant appointedTime;
 	private String eventType;
 	private String body;
-	private List<UserEventDto> users;
+	private Double distance;
 
 	public EventDto() {
 		super();
 	}
 
-	public EventDto(Long id, String title, String description, PlaceDto place, String eventType, String body) {
+	public EventDto(Long id, String title, String description, PlaceDto place, Instant appointedTime, String eventType, String body) {
 		super();
 		this.id = id;
 		this.title = title;
@@ -23,6 +24,15 @@ public class EventDto {
 		this.place = place;
 		this.eventType = eventType;
 		this.body = body;
+	}
+
+	public EventDto(Long id, String title, String description, PlaceDto place, Instant appointedTime, Double distance) {
+		super();
+		this.id = id;
+		this.title = title;
+		this.description = description;
+		this.place = place;
+		this.distance = distance;
 	}
 
 	public Long getId() {
@@ -73,12 +83,12 @@ public class EventDto {
 		this.body = body;
 	}
 
-	public List<UserEventDto> getUsers() {
-		return users;
+	public Double getDistance() {
+		return distance;
 	}
 
-	public void setUsers(List<UserEventDto> users) {
-		this.users = users;
+	public void setDistance(Double distance) {
+		this.distance = distance;
 	}
 
 }

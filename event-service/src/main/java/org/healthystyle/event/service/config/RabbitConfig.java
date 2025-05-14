@@ -2,6 +2,7 @@ package org.healthystyle.event.service.config;
 
 import org.springframework.amqp.core.DirectExchange;
 import org.springframework.amqp.core.Queue;
+import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -19,7 +20,17 @@ public class RabbitConfig {
 	public static final String SPORT_CREATED_QUEUE = "sport-created-queue";
 
 	@Bean
+	public Jackson2JsonMessageConverter jackson2JsonMessageConverter() {
+		return new Jackson2JsonMessageConverter();
+	}
+
+	@Bean
 	public DirectExchange eventDirectExchange() {
 		return new DirectExchange(EVENT_DIRECT_EXCHANGE);
+	}
+
+	@Bean
+	public Queue sportCreatedQueue() {
+		return new Queue(SPORT_CREATED_QUEUE);
 	}
 }
