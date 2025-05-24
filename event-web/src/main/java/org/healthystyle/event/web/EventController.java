@@ -3,6 +3,7 @@ package org.healthystyle.event.web;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -15,9 +16,10 @@ import org.healthystyle.event.service.error.event.EventNotFoundException;
 import org.healthystyle.event.service.error.event.RoleUnacceptableException;
 import org.healthystyle.event.service.error.event.UserEventExistException;
 import org.healthystyle.event.service.error.event.UserNotFoundException;
-import org.healthystyle.event.service.oauth2.TokenService;
 import org.healthystyle.util.error.ErrorResponse;
 import org.healthystyle.util.error.ValidationException;
+import org.healthystyle.util.oauth2.RefreshTokenException;
+import org.healthystyle.util.oauth2.TokenService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -47,7 +49,7 @@ public class EventController {
 	private TokenService tokenService;
 	@Autowired
 	private EventMapper mapper;
-	private RequestCache requestCache = new HttpSessionRequestCache();
+	private Map<String, String> cachedUris = new HashMap<>();
 
 	@PostMapping("/event")
 	public ResponseEntity<?> addEvent(@RequestBody EventSaveRequest saveRequest) throws URISyntaxException {
@@ -73,7 +75,9 @@ public class EventController {
 
 	@GetMapping("/oauth2/redirect")
 	@ResponseBody
-	public String getOAuth2Redirect(HttpServletResponse response) throws URISyntaxException, IOException {
+	public String getOAuth2Redirect(@RequestParam String state, @RequestParam String cachedUri,
+			HttpServletResponse response) throws URISyntaxException, IOException {
+		cachedUris.put(state, cachedUri);
 		return "http://localhost:3003/oauth2/authorize?client_id=event&redirect_uri=http://localhost:3002/auth/event&scope=openid"
 				+ "&response_type=code" + "&response_mode=query" + "&state=xhfk2ronslf" + "&nonce=65jhtt4m9r8";
 //		response.sendRedirect("http://localhost:3003/oauth2/authorize?client_id=event&redirect_uri=http://localhost:3002/auth/event&scope=openid"
@@ -82,10 +86,11 @@ public class EventController {
 
 	@GetMapping("/auth/event")
 	@ResponseStatus(code = HttpStatus.OK)
-	public Map<String, String> getCode(@RequestParam String code, HttpServletResponse response)
+	public Map<String, String> getCode(@RequestParam String state, @RequestParam String code, HttpServletResponse response)
 			throws URISyntaxException, IOException {
 		Map<String, String> resp = tokenService.getTokens(code);
-		response.addCookie(new Cookie("access_token", "dwadw"));
+		resp.put("cached_uri", cachedUris.get(state));
+		resp.put("expires", resp.get("expires_in"));
 		return resp;
 //		response.sendRedirect("http://localhost:3000/event");
 	}
@@ -107,6 +112,21 @@ public class EventController {
 		}
 
 		return ResponseEntity.ok(events);
+	}
+
+	@GetMapping("/oauth2/refresh")
+	@ResponseBody
+	public ResponseEntity<?> refreshTokens(@RequestParam("refresh_token") String refreshToken,
+			HttpServletResponse response) throws URISyntaxException, IOException {
+		Map<String, String> resp;
+		try {
+			resp = tokenService.refreshTokens(refreshToken);
+		} catch (RefreshTokenException e) {
+			return ResponseEntity.badRequest().body(new ErrorResponse("1000", e.getGlobalErrors(), e.getFieldErrors()));
+		}
+		resp.put("expires", resp.get("expires_in"));
+
+		return ResponseEntity.ok(resp);
 	}
 
 	@GetMapping("/events/{id}")

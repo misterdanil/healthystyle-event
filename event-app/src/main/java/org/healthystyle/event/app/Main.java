@@ -13,7 +13,7 @@ import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.context.annotation.Bean;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 
-@SpringBootApplication(scanBasePackages = "org.healthystyle.event")
+@SpringBootApplication(scanBasePackages = {"org.healthystyle.event", "org.healthystyle.util"})
 @EnableJpaRepositories(basePackages = "org.healthystyle.event.repository")
 @EntityScan(basePackages = "org.healthystyle.event.model")
 public class Main {
@@ -33,8 +33,8 @@ public class Main {
 			public void run(String... args) throws Exception {
 				Status s = new Status(StatusType.ACCEPTED);
 				Status s2 = new Status(StatusType.PENDING);
-				repository.save(s);
-				repository.save(s2);
+//				repository.save(s);
+//				repository.save(s2);
 			}
 		};
 	}

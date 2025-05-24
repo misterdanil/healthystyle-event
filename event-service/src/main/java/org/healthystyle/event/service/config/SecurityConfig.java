@@ -22,7 +22,7 @@ public class SecurityConfig {
 	@Bean
 	public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
 		DefaultSecurityFilterChain c = http
-				.authorizeHttpRequests(req -> req.requestMatchers("/oauth2/redirect", "/auth/event").permitAll()
+				.authorizeHttpRequests(req -> req.requestMatchers("/oauth2/redirect", "/auth/event", "/oauth2/refresh").permitAll()
 						.anyRequest().authenticated())
 				.csrf(csrf -> csrf.disable()).cors(Customizer.withDefaults())
 				.oauth2ResourceServer(r -> r.jwt(Customizer.withDefaults())).build();

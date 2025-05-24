@@ -19,7 +19,7 @@ import org.springframework.web.client.RestTemplate;
 
 import jakarta.annotation.PostConstruct;
 
-@Component
+//@Component
 @PropertySource("classpath:oauth2.properties")
 public class TokenServiceImpl implements TokenService {
 	@Autowired

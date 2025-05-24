@@ -44,6 +44,10 @@ public class Role {
 		return type;
 	}
 
+	public void setType(Type type) {
+		this.type = type;
+	}
+
 	public List<Opportunity> getOpportunities() {
 		if (opportunities == null) {
 			opportunities = new ArrayList<>();
