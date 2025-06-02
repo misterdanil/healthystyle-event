@@ -52,7 +52,7 @@ public class TokenServiceImpl implements TokenService {
 		headers.add("Content-Type", MediaType.APPLICATION_FORM_URLENCODED.toString());
 
 		HttpEntity<MultiValueMap<String, String>> entity = new HttpEntity<>(body, headers);
-		ResponseEntity<Map<String, String>> response = restTemplate.exchange("http://localhost:3003/oauth2/token",
+		ResponseEntity<Map<String, String>> response = restTemplate.exchange("http://auth-service:3003/oauth2/token",
 				HttpMethod.POST, entity, new ParameterizedTypeReference<Map<String, String>>() {
 				});
 		System.out.println(response);
@@ -60,5 +60,6 @@ public class TokenServiceImpl implements TokenService {
 		return response.getBody();
 
 	}
+	
 
 }

@@ -58,7 +58,7 @@ public class PlaceServiceImpl implements PlaceService {
 			throw new ValidationException("The place is invalid: %s. Result: %s", result, saveRequest, result);
 		}
 
-		LOG.debug("The place is OK: {}", saveRequest);
+		LOG.debug("The place is valid: {}", saveRequest);
 
 		String description = saveRequest.getDescription();
 		if (description != null && description.isBlank()) {

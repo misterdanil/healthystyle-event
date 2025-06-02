@@ -79,7 +79,7 @@ public class EventTest {
 	@BeforeEach
 	public void setup() {
 		status = new Status(StatusType.ACCEPTED);
-
+//
 		List<String> roles = new ArrayList<>();
 		roles.add("USER");
 		user = new User(1L, roles);

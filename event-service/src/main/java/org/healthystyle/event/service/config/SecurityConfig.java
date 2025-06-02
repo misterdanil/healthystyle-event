@@ -33,7 +33,7 @@ public class SecurityConfig {
 	public CorsConfigurationSource corsConfigurationSource() {
 		CorsConfiguration configuration = new CorsConfiguration();
 
-		configuration.setAllowedOrigins(Arrays.asList("http://localhost:3000", "http://localhost:3003"));
+		configuration.setAllowedOrigins(Arrays.asList("http://localhost:3000", "http://localhost:3003", "http://localhost:3010"));
 		configuration.setAllowedHeaders(Arrays.asList("*"));
 		configuration.setAllowedMethods(Arrays.asList("*"));
 		configuration.setAllowCredentials(true);
@@ -50,7 +50,7 @@ public class SecurityConfig {
 
 	@Bean
 	public NimbusJwtDecoder jwtDecoder() {
-		NimbusJwtDecoder decoder = NimbusJwtDecoder.withJwkSetUri("http://localhost:3003/oauth2/jwks").build();
+		NimbusJwtDecoder decoder = NimbusJwtDecoder.withJwkSetUri("http://auth-service:3003/oauth2/jwks").build();
 
 		return decoder;
 	}
